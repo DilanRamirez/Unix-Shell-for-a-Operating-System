@@ -45,17 +45,7 @@ void parceCommand(char* line, int length, char** args){
 
 }
 
-/**
- * Read a command from the keyboard into the line 'line' and tokenize it
- * such that 'args[i]' points into 'line' to the i'th token in the command.
- * line: line allocated by the calling code. Must be at least
- * COMMAND_LENGTH bytes long.
- * args[]: Array of character pointers which point into 'line'. Must be at
- * least NUM_args long. Will strip out up to one final '&' token.
- * 'args' will be NULL terminated.
- * in_background: pointer to a boolean variable. Set to true if user entered
- * an & as their last token; otherwise set to false.
- */
+
 int readCommand(char* line, char** args){
     // Read input
     int length = read(0, line, 1024-1);
@@ -70,6 +60,9 @@ int readCommand(char* line, char** args){
 
 //function to execute user commands
 void executeCommands(char** args){
+    int fd0,fd1,i,in=0,out=0;
+    char input[64],output[64];
+
     // internal commands
     if(strcmp(args[0], "exit") == 0) {
         exit(0);
@@ -86,11 +79,36 @@ void executeCommands(char** args){
         perror("Shell");
     }
     else if(pid == 0) {
+         for(i=0;args[i]!='\0';i++){
+            if(strcmp(args[i],">")==0){      
+                args[i]=NULL;
+                strcpy(output,args[i+1]);
+                out=2;
+            }         
+        }
+        if(out){
+            if ((fd1 = creat(output , 0644)) < 0) {
+                perror("Couldn't open the output file");
+                exit(0);
+            }           
+
+            dup2(fd1, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
+            close(fd1);
+        }
+
+        execvp(args[0], args);
+        perror("execvp");
+        _exit(1);
+
         if(execvp(args[0], args) == -1) {
             write(1, args[0], strlen(args[0]));
             write(1, "\nUnknown command.\n", strlen("\nUnknown command.\n"));
             exit(-1);
         }
+        
+
+        // finds where '<' or '>' occurs and make that args[i] = NULL , to ensure that command wont't read that
+
     }
     else {
         wait(NULL);
@@ -152,7 +170,7 @@ void loop(){
 
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* args[]){
     system("clear");
     printf("---------CS 4375 Lab 2: Unix Shell-----------\n\n\n");
     loop();
