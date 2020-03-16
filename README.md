@@ -6,7 +6,7 @@ Your shell should meet the following requirements:
 is not set, the default prompt should be "$ ").
  * 2. Accepts the standard unix command shell syntax for specifying commands and
 parameters
-     * o Your shell should create a child process that uses execve to run the command with
+      * Your shell should create a child process that uses execve to run the command with
 its parameters.
       * If an absolute path is not specified, your shell should instead find it using the
 $PATH environment variable.
